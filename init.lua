@@ -795,6 +795,7 @@ require('lazy').setup({
                 typescript = { 'prettierd', 'prettier', stop_after_first = true },
                 json = { 'prettierd', 'prettier', stop_after_first = true },
                 html = { 'prettierd', 'prettier', stop_after_first = true },
+                htmldjango = { 'prettierd', 'prettier', stop_after_first = true },
                 css = { 'prettierd', 'prettier', stop_after_first = true },
             },
         },
@@ -1047,5 +1048,12 @@ require('lazy').setup({
 })
 
 require 'kickstart.plugins.harpoon'
+
+vim.api.nvim_create_autocmd('FileType', {
+    pattern = 'htmldjango',
+    callback = function()
+        vim.bo.filetype = 'html'
+    end,
+})
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
