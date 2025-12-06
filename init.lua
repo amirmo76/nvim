@@ -796,7 +796,7 @@ require('lazy').setup({
                 typescript = { 'prettierd', 'prettier', stop_after_first = true },
                 json = { 'prettierd', 'prettier', stop_after_first = true },
                 html = { 'prettierd', 'prettier', stop_after_first = true },
-                htmldjango = { 'prettierd', 'prettier', stop_after_first = true },
+                htmldjango = { 'djlint', 'prettierd', 'prettier', stop_after_first = true },
                 css = { 'prettierd', 'prettier', stop_after_first = true },
             },
         },
@@ -807,6 +807,7 @@ require('lazy').setup({
         event = 'VimEnter',
         version = '1.*',
         dependencies = {
+            'fang2hou/blink-copilot',
             -- Snippet Engine
             {
                 'L3MON4D3/LuaSnip',
@@ -861,7 +862,6 @@ require('lazy').setup({
                 --
                 -- See :h blink-cmp-config-keymap for defining your own keymap
                 preset = 'default',
-
                 -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
                 --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
             },
@@ -875,13 +875,21 @@ require('lazy').setup({
             completion = {
                 -- By default, you may press `<c-space>` to show the documentation.
                 -- Optionally, set `auto_show = true` to show the documentation after a delay.
-                documentation = { auto_show = false, auto_show_delay_ms = 500 },
+                documentation = { auto_show = true, auto_show_delay_ms = 300 },
+                ghost_text = { enabled = false },
+                menu = { auto_show = true },
             },
 
             sources = {
-                default = { 'lsp', 'path', 'snippets', 'lazydev' },
+                default = { 'lsp', 'path', 'snippets', 'lazydev', 'copilot' },
                 providers = {
                     lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
+                    copilot = {
+                        name = 'copilot',
+                        module = 'blink-copilot',
+                        score_offset = 100,
+                        async = true,
+                    },
                 },
             },
 
@@ -911,7 +919,7 @@ require('lazy').setup({
         config = function()
             ---@diagnostic disable-next-line: missing-fields
             require('kanagawa').setup {
-                transparent = false,
+                transparent = true,
                 commentStyle = { italic = false },
                 keywordStyle = { italic = false },
                 colors = {
@@ -1016,8 +1024,12 @@ require('lazy').setup({
     -- require 'kickstart.plugins.lint',
     require 'kickstart.plugins.autopairs',
     require 'kickstart.plugins.obsidian',
+    require 'kickstart.plugins.sidekick',
+    require 'kickstart.plugins.copilot',
+    require 'kickstart.plugins.snacks',
     -- require 'kickstart.plugins.neo-tree',
-    -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+    require 'kickstart.plugins.noice',
+    require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
     -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
     --    This is the easiest way to modularize your config.
@@ -1052,12 +1064,4 @@ require('lazy').setup({
 })
 
 require 'kickstart.plugins.harpoon'
-
-vim.api.nvim_create_autocmd('FileType', {
-    pattern = 'htmldjango',
-    callback = function()
-        vim.bo.filetype = 'html'
-    end,
-})
--- The line beneath this is called `modeline`. See `:help modeline`
--- vim: ts=2 sts=2 sw=2 et
+vim.opt.termbidi = true
