@@ -27,7 +27,7 @@ vim.opt.conceallevel = 1
 return {
     'obsidian-nvim/obsidian.nvim',
     version = '*',
-    lazy = false,
+    lazy = true,
     ft = 'markdown',
     dependencies = {
         'nvim-lua/plenary.nvim',
