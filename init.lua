@@ -106,6 +106,7 @@ require('lazy').setup({
 
             pcall(require('telescope').load_extension, 'fzf')
             pcall(require('telescope').load_extension, 'ui-select')
+            pcall(require('telescope').load_extension, 'harpoon')
 
             local builtin = require 'telescope.builtin'
             vim.keymap.set('n', '<leader>ph', builtin.help_tags, { desc = '[S]earch [H]elp' })
@@ -450,6 +451,7 @@ require('lazy').setup({
     require 'kickstart.plugins.obsidian',
     require 'kickstart.plugins.copilot',
     require 'kickstart.plugins.noice',
+    require 'kickstart.plugins.harpoon',
 }, {
     ui = {
         icons = {},
