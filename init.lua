@@ -452,6 +452,7 @@ require('lazy').setup({
     require 'kickstart.plugins.copilot',
     require 'kickstart.plugins.noice',
     require 'kickstart.plugins.harpoon',
+    require 'kickstart.plugins.snacks',
 }, {
     ui = {
         icons = {},
@@ -459,3 +460,6 @@ require('lazy').setup({
 })
 
 vim.opt.termbidi = true
+vim.keymap.set('n', '<leader>F', function()
+    vim.cmd [[%!leptosfmt --stdin --rustfmt]]
+end, { desc = 'Format buffer with leptosfmt (CLI)' })

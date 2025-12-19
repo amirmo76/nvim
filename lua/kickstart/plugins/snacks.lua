@@ -6,6 +6,7 @@ return {
         ---@type snacks.Config
         opts = {
             indent = { enabled = true },
+            notifier = { enabled = true },
         },
     },
 }
