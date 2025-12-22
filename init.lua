@@ -264,6 +264,23 @@ require('lazy').setup({
                     },
                 },
 
+                ts_ls = {
+                    init_options = {
+                        plugins = {
+                            {
+                                name = '@vue/typescript-plugin',
+                                location = vim.fn.stdpath 'data'
+                                    .. '/mason/packages/vue-language-server/node_modules/@vue/language-server/node_modules/@vue/typescript-plugin',
+                                languages = { 'vue' },
+                            },
+                        },
+                    },
+                    filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
+                },
+                vue_ls = {
+                    filetypes = { 'vue' },
+                },
+
                 lua_ls = {
                     settings = {
                         Lua = {
@@ -285,12 +302,29 @@ require('lazy').setup({
                 automatic_installation = false,
                 handlers = {
                     function(server_name)
-                        local server = servers[server_name] or {}
-                        server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-                        require('lspconfig')[server_name].setup(server)
+                        require('lspconfig')[server_name].setup {
+                            capabilities = capabilities,
+                        }
                     end,
                 },
             }
+            require('lspconfig.configs').vue_ls = {
+                default_config = {
+                    cmd = { 'vue-language-server', '--stdio' },
+                    filetypes = { 'vue' },
+                    root_dir = require('lspconfig').util.root_pattern('package.json', 'yarn.lock', '.git'),
+                },
+            }
+            vim.schedule(function()
+                for server_name, config in pairs(servers) do
+                    vim.lsp.config(
+                        server_name,
+                        vim.tbl_deep_extend('force', config, {
+                            capabilities = capabilities,
+                        })
+                    )
+                end
+            end)
         end,
     },
 
@@ -326,6 +360,7 @@ require('lazy').setup({
                 lua = { 'stylua' },
                 javascript = { 'prettierd', 'prettier', stop_after_first = true },
                 typescript = { 'prettierd', 'prettier', stop_after_first = true },
+                vue = { 'prettierd', 'prettier', stop_after_first = true },
                 json = { 'prettierd', 'prettier', stop_after_first = true },
                 html = { 'prettierd', 'prettier', stop_after_first = true },
                 htmldjango = { 'djlint', 'prettierd', 'prettier', stop_after_first = true },
@@ -436,9 +471,24 @@ require('lazy').setup({
     {
         'nvim-treesitter/nvim-treesitter',
         build = ':TSUpdate',
-        main = 'nvim-treesitter.configs',
+        -- main = 'nvim-treesitter.configs',
         opts = {
-            ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'rust' },
+            ensure_installed = {
+                'bash',
+                'c',
+                'diff',
+                'html',
+                'lua',
+                'luadoc',
+                'markdown',
+                'markdown_inline',
+                'query',
+                'vim',
+                'vimdoc',
+                'rust',
+                'javascript',
+                'typescript',
+            },
             auto_install = true,
             highlight = {
                 enable = true,
