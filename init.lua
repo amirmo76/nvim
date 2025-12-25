@@ -177,28 +177,26 @@ require('lazy').setup({
                     map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Open Workspace Symbols')
                     map('grt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
 
-                    ---@param client vim.lsp.Client
-                    ---@param method vim.lsp.protocol.Method
-                    ---@param bufnr? integer some lsp support methods only in specific files
-                    ---@return boolean
                     local function client_supports_method(client, method, bufnr)
                         if vim.fn.has 'nvim-0.11' == 1 then
                             return client:supports_method(method, bufnr)
                         else
-                            return client.supports_method(method, { bufnr = bufnr })
+                            return client:supports_method(method, { bufnr = bufnr })
                         end
                     end
 
                     local client = vim.lsp.get_client_by_id(event.data.client_id)
+
                     if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
                         local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
-                        vim.api.nvim_create_autocmd({ 'CursorHold' }, {
+
+                        vim.api.nvim_create_autocmd('CursorHold', {
                             buffer = event.buf,
                             group = highlight_augroup,
                             callback = vim.lsp.buf.document_highlight,
                         })
 
-                        vim.api.nvim_create_autocmd({ 'CursorMoved' }, {
+                        vim.api.nvim_create_autocmd('CursorMoved', {
                             buffer = event.buf,
                             group = highlight_augroup,
                             callback = vim.lsp.buf.clear_references,
@@ -237,94 +235,72 @@ require('lazy').setup({
                     source = 'if_many',
                     spacing = 2,
                     format = function(diagnostic)
-                        local diagnostic_message = {
-                            [vim.diagnostic.severity.ERROR] = diagnostic.message,
-                            [vim.diagnostic.severity.WARN] = diagnostic.message,
-                            [vim.diagnostic.severity.INFO] = diagnostic.message,
-                            [vim.diagnostic.severity.HINT] = diagnostic.message,
-                        }
-                        return diagnostic_message[diagnostic.severity]
+                        return diagnostic.message
                     end,
                 },
             }
 
             local capabilities = require('blink.cmp').get_lsp_capabilities()
 
+            -- Mason 2.x: Package:get_install_path() removed -> use $MASON
+            local mason_root = vim.fn.expand '$MASON'
+            if mason_root == nil or mason_root == '' then
+                mason_root = vim.fn.stdpath 'data' .. '/mason'
+            end
+
+            local vue_ts_plugin_location = mason_root .. '/packages/vue-language-server/node_modules/@vue/language-server/node_modules/@vue/typescript-plugin'
+
+            if vim.uv.fs_stat(vue_ts_plugin_location) == nil then
+                vue_ts_plugin_location = nil
+            end
+
             local servers = {
                 rust_analyzer = {
                     settings = {
                         ['rust-analyzer'] = {
-                            lru = {
-                                capacity = 32,
-                            },
-                            checkOnSave = {
-                                command = 'check',
-                            },
+                            lru = { capacity = 32 },
+                            checkOnSave = { command = 'check' },
                         },
                     },
                 },
 
                 ts_ls = {
-                    init_options = {
+                    init_options = vue_ts_plugin_location and {
                         plugins = {
                             {
                                 name = '@vue/typescript-plugin',
-                                location = vim.fn.stdpath 'data'
-                                    .. '/mason/packages/vue-language-server/node_modules/@vue/language-server/node_modules/@vue/typescript-plugin',
+                                location = vue_ts_plugin_location,
                                 languages = { 'vue' },
                             },
                         },
-                    },
+                    } or nil,
                     filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue' },
                 },
-                vue_ls = {
-                    filetypes = { 'vue' },
-                },
+
+                vue_ls = { filetypes = { 'vue' } },
 
                 lua_ls = {
                     settings = {
                         Lua = {
-                            completion = {
-                                callSnippet = 'Replace',
-                            },
+                            completion = { callSnippet = 'Replace' },
                         },
                     },
                 },
             }
 
-            local ensure_installed = vim.tbl_keys(servers or {})
-            vim.list_extend(ensure_installed, {
-                'stylua',
-            })
-            require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+            require('mason-tool-installer').setup {
+                ensure_installed = { 'stylua' },
+            }
+
             require('mason-lspconfig').setup {
-                ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
-                automatic_installation = false,
-                handlers = {
-                    function(server_name)
-                        require('lspconfig')[server_name].setup {
-                            capabilities = capabilities,
-                        }
-                    end,
-                },
+                ensure_installed = vim.tbl_keys(servers),
+                -- auto-enabling installed servers is handled by mason-lspconfig (default behavior)
             }
-            require('lspconfig.configs').vue_ls = {
-                default_config = {
-                    cmd = { 'vue-language-server', '--stdio' },
-                    filetypes = { 'vue' },
-                    root_dir = require('lspconfig').util.root_pattern('package.json', 'yarn.lock', '.git'),
-                },
-            }
-            vim.schedule(function()
-                for server_name, config in pairs(servers) do
-                    vim.lsp.config(
-                        server_name,
-                        vim.tbl_deep_extend('force', config, {
-                            capabilities = capabilities,
-                        })
-                    )
-                end
-            end)
+
+            for name, cfg in pairs(servers) do
+                cfg.capabilities = vim.tbl_deep_extend('force', {}, capabilities, cfg.capabilities or {})
+                vim.lsp.config(name, cfg)
+            end
         end,
     },
 
